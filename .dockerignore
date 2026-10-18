@@ -1,0 +1,21 @@
+# Repository-level ignore (the images build from backend/ and frontend/,
+# each of which also has its own .dockerignore).
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+data
+**/__pycache__
+**/*.py[cod]
+**/.venv
+**/.pytest_cache
+**/node_modules
+**/.next
+**/out
+**/*.log
+.DS_Store
+.idea
+.vscode
+README.md
+docs

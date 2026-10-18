@@ -1,0 +1,7 @@
+fastapi==0.143.3
+uvicorn[standard]==0.54.0
+pydantic==2.14.1
+pydantic-settings==2.16.0
+langchain-openai==0.3.35
+langchain-core==0.3.86
+vaderSentiment==3.3.2

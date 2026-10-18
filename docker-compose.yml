@@ -1,0 +1,72 @@
+name: ai-interviewer
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      DATA_DIR: /data
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - interview_data:/data
+    # Lets the container reach an Ollama / LM Studio server running on the host.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Baked into Next.js rewrites at build time.
+        BACKEND_INTERNAL_URL: http://api:8000
+    environment:
+      BACKEND_INTERNAL_URL: http://api:8000
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Optional fully-local model runtime.
+  #   docker compose --profile local-llm up -d
+  #   docker compose exec ollama ollama pull llama3.2
+  # Then set LLM_PROVIDER=ollama, LLM_MODEL=llama3.2 and
+  # LLM_BASE_URL=http://ollama:11434/v1 in .env and recreate the API service.
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["local-llm"]
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  interview_data:
+    name: ai_interviewer_data
+  ollama_models:
+    name: ai_interviewer_ollama_models
